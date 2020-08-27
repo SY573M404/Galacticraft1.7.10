@@ -40,6 +40,7 @@ import micdoodle8.mods.galacticraft.planets.asteroids.dimension.WorldProviderAst
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityClientPlayerMP;
+import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.Item;
@@ -1266,7 +1267,7 @@ public class GCPlayerHandler
 
                     if (!player.worldObj.isRemote)
                     {
-			if(player.worldObj.isAirBlock(GCPlayer.chestSpawnVector.x, GCPlayer.chestSpawnVector.y, GCPlayer.chestSpawnVector.z))
+            if(player.worldObj.isAirBlock((int)Math.floor(GCPlayer.chestSpawnVector.x), (int)Math.floor(GCPlayer.chestSpawnVector.y), (int)Math.floor(GCPlayer.chestSpawnVector.z)))
                             player.worldObj.spawnEntityInWorld(chest);
 			else
 			    for(ItemStack stacks : GCPlayer.rocketStacks)
