@@ -28,12 +28,19 @@ public class GalaxyRegistry
     static HashMap<CelestialBody, List<Satellite>> satelliteList = Maps.newHashMap();
     static HashMap<SolarSystem, List<Planet>> solarSystemList = Maps.newHashMap();
 
-    public static CelestialBody getCelestialBodyFromDimensionID(int dimensionID)
+    public static CelestialBody getCelestialBodyFromDimensionID(int dimensionID) {
+        return getCelestialBodyFromDimensionID(dimensionID, false);
+    }
+
+    public static CelestialBody getCelestialBodyFromDimensionID(int dimensionID, boolean checkOnlyRegistered)
     {
         for (Planet planet : GalaxyRegistry.planets.values())
         {
             if (planet.getDimensionID() == dimensionID)
             {
+                if (checkOnlyRegistered && planet.getWorldProvider() == null) {
+                    continue;
+                }
                 return planet;
             }
         }
@@ -42,6 +49,9 @@ public class GalaxyRegistry
         {
             if (moon.getDimensionID() == dimensionID)
             {
+                if (checkOnlyRegistered && moon.getWorldProvider() == null) {
+                    continue;
+                }
                 return moon;
             }
         }
@@ -50,6 +60,9 @@ public class GalaxyRegistry
         {
             if (satellite.getDimensionID() == dimensionID)
             {
+                if (checkOnlyRegistered && satellite.getWorldProvider() == null) {
+                    continue;
+                }
                 return satellite;
             }
         }

@@ -1,5 +1,7 @@
 package micdoodle8.mods.galacticraft.core.entities;
 
+import com.gamerforea.eventhelper.fake.FakePlayerContainer;
+import com.gamerforea.galacticraft.ModUtils;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import micdoodle8.mods.galacticraft.core.items.GCItems;
@@ -42,6 +44,7 @@ public class EntityMeteorChunk extends Entity implements IProjectile
     public EntityMeteorChunk(World world)
     {
         super(world);
+        fake = ModUtils.NEXUS_FACTORY.wrapFake(this);
         this.renderDistanceWeight = 10.0D;
         this.setSize(0.5F, 0.5F);
     }
@@ -49,6 +52,7 @@ public class EntityMeteorChunk extends Entity implements IProjectile
     public EntityMeteorChunk(World world, double x, double y, double z)
     {
         super(world);
+        fake = ModUtils.NEXUS_FACTORY.wrapFake(this);
         this.renderDistanceWeight = 10.0D;
         this.setSize(0.5F, 0.5F);
         this.setPosition(x, y, z);
@@ -58,12 +62,14 @@ public class EntityMeteorChunk extends Entity implements IProjectile
     public EntityMeteorChunk(World world, EntityLivingBase shootingEntity, EntityLivingBase target, float speed, float randMod)
     {
         super(world);
+        fake = ModUtils.NEXUS_FACTORY.wrapFake(this);
         this.renderDistanceWeight = 10.0D;
         this.shootingEntity = shootingEntity;
 
         if (shootingEntity instanceof EntityPlayer)
         {
             this.canBePickedUp = 1;
+            fake.setRealPlayer((EntityPlayer)shootingEntity);
         }
 
         this.posY = shootingEntity.posY + shootingEntity.getEyeHeight() - 0.10000000149011612D;
@@ -88,12 +94,14 @@ public class EntityMeteorChunk extends Entity implements IProjectile
     public EntityMeteorChunk(World par1World, EntityLivingBase par2EntityLivingBase, float speed)
     {
         super(par1World);
+        fake = ModUtils.NEXUS_FACTORY.wrapFake(this);
         this.renderDistanceWeight = 10.0D;
         this.shootingEntity = par2EntityLivingBase;
 
         if (par2EntityLivingBase instanceof EntityPlayer)
         {
             this.canBePickedUp = 1;
+            fake.setRealPlayer((EntityPlayer)shootingEntity);
         }
 
         this.setSize(0.5F, 0.5F);
@@ -264,7 +272,7 @@ public class EntityMeteorChunk extends Entity implements IProjectile
                 movingobjectposition = new MovingObjectPosition(entity);
             }
 
-            if (movingobjectposition != null && movingobjectposition.entityHit != null && movingobjectposition.entityHit instanceof EntityPlayer)
+            if (movingobjectposition != null && movingobjectposition.entityHit instanceof EntityPlayer)
             {
                 EntityPlayer entityplayer = (EntityPlayer) movingobjectposition.entityHit;
 
@@ -282,6 +290,10 @@ public class EntityMeteorChunk extends Entity implements IProjectile
             {
                 if (movingobjectposition.entityHit != null)
                 {
+                    if(fake.cantDamage(movingobjectposition.entityHit)) {
+                        this.setDead();
+                        return;
+                    }
                     f2 = MathHelper.sqrt_double(this.motionX * this.motionX + this.motionY * this.motionY + this.motionZ * this.motionZ);
                     int i1 = MathHelper.ceiling_double_int(f2 * damage);
 
@@ -425,13 +437,13 @@ public class EntityMeteorChunk extends Entity implements IProjectile
     @Override
     protected void readEntityFromNBT(NBTTagCompound nbttagcompound)
     {
-
+        fake.readFromNBT(nbttagcompound);
     }
 
     @Override
     protected void writeEntityToNBT(NBTTagCompound nbttagcompound)
     {
-
+        fake.writeToNBT(nbttagcompound);
     }
 
     @Override
@@ -460,4 +472,6 @@ public class EntityMeteorChunk extends Entity implements IProjectile
     {
         return false;
     }
+
+    public final FakePlayerContainer fake;
 }

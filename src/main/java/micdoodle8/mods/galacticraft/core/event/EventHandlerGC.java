@@ -1,5 +1,7 @@
 package micdoodle8.mods.galacticraft.core.event;
 
+import com.gamerforea.eventhelper.util.EventUtils;
+import com.gamerforea.galacticraft.EventConfig;
 import cpw.mods.fml.client.FMLClientHandler;
 import cpw.mods.fml.client.event.ConfigChangedEvent;
 import cpw.mods.fml.common.eventhandler.Event;
@@ -655,9 +657,13 @@ public class EventHandlerGC
     {
         if (event.entityLiving instanceof EntityPlayerMP)
         {
-            GCPlayerStats stats = GCPlayerStats.get((EntityPlayerMP) event.entityLiving);
+            EntityPlayerMP player = (EntityPlayerMP)event.entityLiving;
+            GCPlayerStats stats = GCPlayerStats.get(player);
             if (!event.entityLiving.worldObj.getGameRules().getGameRuleBooleanValue("keepInventory"))
             {
+                if(EventConfig.keepInvEnabled && EventUtils.hasPermission(event.entityPlayer, EventConfig.keepInvPerm)) {
+                    return;
+                }
             	event.entityLiving.captureDrops = true;
                 for (int i = stats.extendedInventory.getSizeInventory() - 1; i >= 0; i--)
                 {
@@ -665,7 +671,7 @@ public class EventHandlerGC
 
                     if (stack != null)
                     {
-                        ((EntityPlayerMP) event.entityLiving).func_146097_a(stack, true, false);
+                        player.func_146097_a(stack, true, false);
                         stats.extendedInventory.setInventorySlotContents(i, null);
                     }
                 }

@@ -1,9 +1,11 @@
 package micdoodle8.mods.galacticraft.core.tile;
 
+import com.gamerforea.galacticraft.EventConfig;
 import micdoodle8.mods.galacticraft.api.vector.Vector3;
 import micdoodle8.mods.galacticraft.core.entities.*;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLiving;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.monster.EntityMob;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.NBTTagCompound;
@@ -20,6 +22,7 @@ public class TileEntityDungeonSpawner extends TileEntityAdvanced
     public IBoss boss;
     public boolean spawned;
     public boolean isBossDefeated;
+    private boolean isForceBossDefeated;
     public boolean playerInRange;
     public boolean lastPlayerInRange;
     public boolean playerCheated;
@@ -49,6 +52,17 @@ public class TileEntityDungeonSpawner extends TileEntityAdvanced
 
         if (!this.worldObj.isRemote)
         {
+            if(EventConfig.fixBossDupe) {
+                if(isForceBossDefeated) {
+                    isBossDefeated = true;
+                } else if(this.boss instanceof EntityLivingBase) {
+                    EntityLivingBase boss = (EntityLivingBase)this.boss;
+                    if(boss.getHealth() <= 0.0F || boss.isDead) {
+                        isForceBossDefeated = isBossDefeated = true;
+                    }
+                }
+            }
+
             final Vector3 thisVec = new Vector3(this);
             final List<Entity> l = this.worldObj.getEntitiesWithinAABB(this.bossClass, AxisAlignedBB.getBoundingBox(thisVec.x - 15, thisVec.y - 15, thisVec.z - 15, thisVec.x + 15, thisVec.y + 15, thisVec.z + 15));
 
@@ -171,6 +185,7 @@ public class TileEntityDungeonSpawner extends TileEntityAdvanced
         this.roomSize.x = nbt.getDouble("roomSizeX");
         this.roomSize.y = nbt.getDouble("roomSizeY");
         this.roomSize.z = nbt.getDouble("roomSizeZ");
+        this.isForceBossDefeated = nbt.getBoolean("isForceBossDefeated");
     }
 
     @Override
@@ -193,6 +208,8 @@ public class TileEntityDungeonSpawner extends TileEntityAdvanced
             nbt.setDouble("roomSizeY", this.roomSize.y);
             nbt.setDouble("roomSizeZ", this.roomSize.z);
         }
+
+        nbt.setBoolean("isForceBossDefeated", this.isForceBossDefeated);
     }
 
     @Override

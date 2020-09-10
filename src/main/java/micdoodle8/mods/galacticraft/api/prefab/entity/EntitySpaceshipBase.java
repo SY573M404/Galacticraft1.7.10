@@ -1,7 +1,11 @@
 package micdoodle8.mods.galacticraft.api.prefab.entity;
 
+import com.gamerforea.eventhelper.util.EventUtils;
+import com.gamerforea.eventhelper.util.ExplosionByPlayer;
+import com.gamerforea.galacticraft.ModUtils;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
+import ibxm.Player;
 import io.netty.buffer.ByteBuf;
 import micdoodle8.mods.galacticraft.api.GalacticraftRegistry;
 import micdoodle8.mods.galacticraft.api.entity.IIgnoreShift;
@@ -123,6 +127,10 @@ public abstract class EntitySpaceshipBase extends Entity implements IPacketRecei
             }
             else
             {
+                EntityPlayer player = ((EntityPlayer)((e instanceof EntityPlayer) ? (EntityPlayer)e : ((EntityPlayer)(ModUtils.getModFake(worldObj)))));
+                if(EventUtils.cantBreak(player, posX, posY, posZ)) {
+                    return false;
+                }
                 this.rollAmplitude = 10;
                 this.setBeenAttacked();
                 this.shipDamage += par2 * 10;
@@ -419,7 +427,8 @@ public abstract class EntitySpaceshipBase extends Entity implements IPacketRecei
 
         if (!ConfigManagerCore.disableSpaceshipGrief)
         {
-            this.worldObj.createExplosion(this, this.posX, this.posY, this.posZ, 5, true);
+            ExplosionByPlayer.createExplosion(ModUtils.NEXUS_FACTORY.getProfile(), null, worldObj, this, posX, posY, posZ, 5F, true);
+//            this.worldObj.createExplosion(this, this.posX, this.posY, this.posZ, 5, true);
         }
 
         this.setDead();
@@ -631,7 +640,7 @@ public abstract class EntitySpaceshipBase extends Entity implements IPacketRecei
 		str[1] = (countdown == 400) ? GCCoreUtil.translate("gui.rocket.onLaunchpad") : ((countdown > 0) ? GCCoreUtil.translate("gui.rocket.countdown") + ": " + countdown / 20 : GCCoreUtil.translate("gui.rocket.launched"));
 		str[2] = GCCoreUtil.translate("gui.rocket.height") + ": " + data[1];
 		str[3] = GameScreenText.makeSpeedString(data[2]);
-		str[4] = GCCoreUtil.translate("gui.message.fuel.name") + ": " + data[3] + "%";
+		str[4] = GCCoreUtil.translate("gui.message.fuel.name") + ": " + data[3] + '%';
     }
 
     public void adjustDisplay(int[] data)

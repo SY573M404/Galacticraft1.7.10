@@ -19,6 +19,7 @@ public abstract class BiomeDecoratorSpace
 
     public void decorate(World world, Random random, int chunkX, int chunkZ)
     {
+//        TODO: Странная хрень в фиксе
         if (this.getCurrentWorld() != null)
         {
             throw new RuntimeException("Already decorating!!");

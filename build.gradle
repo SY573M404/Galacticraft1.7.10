@@ -23,6 +23,10 @@ buildscript {
 
 apply plugin: 'forge' // Add forge dependency
 
+dependencies {
+	compile files('libs/EventHelper.jar')
+}
+
 sourceSets.main {
     java {
         srcDirs = ['src/main/java', 'dependencies/main/java']
@@ -59,7 +63,8 @@ ext.coreFiles = ['micdoodle8/mods/galacticraft/api/**',
 					'assets/minecraft/**',
 					'assets/galacticraftmoon/**',
 					'assets/galacticraftcore/**',
-					'**/dependenciesGC.info']
+					'**/dependenciesGC.info',
+					'com/gamerforea/galacticraft/**']
 					
 // Keep a list of planets addon files/directories for easy jar packing
 ext.planetsFiles = ['micdoodle8/mods/galacticraft/planets/**',

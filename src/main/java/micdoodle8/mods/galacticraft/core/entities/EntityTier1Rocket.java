@@ -1,5 +1,6 @@
 package micdoodle8.mods.galacticraft.core.entities;
 
+import com.gamerforea.eventhelper.util.EventUtils;
 import micdoodle8.mods.galacticraft.api.prefab.entity.EntityTieredRocket;
 import micdoodle8.mods.galacticraft.api.prefab.world.gen.WorldProviderSpace;
 import micdoodle8.mods.galacticraft.api.tile.IFuelDock;
@@ -207,6 +208,9 @@ public class EntityTier1Rocket extends EntityTieredRocket
     @Override
     public boolean isUseableByPlayer(EntityPlayer par1EntityPlayer)
     {
+        if(EventUtils.cantDamage(par1EntityPlayer, this)) {
+            return false;
+        }
         return !this.isDead && par1EntityPlayer.getDistanceSqToEntity(this) <= 64.0D;
     }
 

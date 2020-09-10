@@ -1,5 +1,6 @@
 package micdoodle8.mods.galacticraft.core.blocks;
 
+import com.gamerforea.eventhelper.util.EventUtils;
 import net.minecraft.block.BlockContainer;
 import net.minecraft.block.material.Material;
 import net.minecraft.entity.player.EntityPlayer;
@@ -41,6 +42,9 @@ public abstract class BlockAdvanced extends BlockContainer
          * Check if the player is holding a wrench or an electric item. If so,
          * call the wrench event.
          */
+        if(EventUtils.cantBreak(entityPlayer, x, y, z)) {
+            return false;
+        }
         if (this.isUsableWrench(entityPlayer, entityPlayer.inventory.getCurrentItem(), x, y, z))
         {
             this.damageWrench(entityPlayer, entityPlayer.inventory.getCurrentItem(), x, y, z);

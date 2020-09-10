@@ -2,6 +2,7 @@ package micdoodle8.mods.galacticraft.core.network;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
+import micdoodle8.mods.galacticraft.api.prefab.entity.EntitySpaceshipBase;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 
@@ -47,7 +48,13 @@ public class PacketRotateRocket implements IPacket
     @Override
     public void handleServerSide(EntityPlayer player)
     {
-        Entity entity = player.worldObj.getEntityByID(this.entityID);
+        Entity entity = player.ridingEntity;
+        if(!(entity instanceof EntitySpaceshipBase)) {
+            return;
+        }
+        if(entity.getEntityId() != entityID) {
+            return;
+        }
 
         if (entity != null)
         {

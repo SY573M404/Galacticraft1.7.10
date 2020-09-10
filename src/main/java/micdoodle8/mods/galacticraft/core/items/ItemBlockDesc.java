@@ -1,5 +1,6 @@
 package micdoodle8.mods.galacticraft.core.items;
 
+import com.gamerforea.eventhelper.util.EventUtils;
 import cpw.mods.fml.client.FMLClientHandler;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -90,5 +91,47 @@ public class ItemBlockDesc extends ItemBlockGC
                 info.add(GCCoreUtil.translateWithFormat("itemDesc.shift.name", GameSettings.getKeyDisplayString(FMLClientHandler.instance().getClient().gameSettings.keyBindSneak.getKeyCode())));
             }
         }
+    }
+
+    public boolean placeBlockAt(ItemStack stack, EntityPlayer player, World world, int x0, int y0, int z0, int side,
+                                float hitX, float hitY, float hitZ, int meta)
+    {
+        if(field_150939_a == GCBlocks.nasaWorkbench)
+        {
+            for(int x = -1; x < 2; x++)
+            {
+                for(int y = 0; y < 4; y++)
+                {
+                    for(int z = -1; z < 2; z++)
+                    {
+                        if(Math.abs(x) == 1 && Math.abs(z) == 1)
+                            continue;
+                        if(y != 0 && y != 3)
+                        {
+                            if(EventUtils.cantBreak(player, x0 + x, y0 + y, z0 + z))
+                                return false;
+                            continue;
+                        }
+                        if(x != 0 || z != 0)
+                            continue;
+                        if(y == 0 && EventUtils.cantBreak(player, x0, y0, z0))
+                            return false;
+                        if(EventUtils.cantBreak(player, x0 + x, y0 + y, z0 + z))
+                            return false;
+                    }
+
+                }
+
+            }
+
+        }
+        if(!world.setBlock(x0, y0, z0, field_150939_a, meta, 3))
+            return false;
+        if(world.getBlock(x0, y0, z0) == field_150939_a)
+        {
+            field_150939_a.onBlockPlacedBy(world, x0, y0, z0, player, stack);
+            field_150939_a.onPostBlockPlaced(world, x0, y0, z0, meta);
+        }
+        return true;
     }
 }

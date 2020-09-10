@@ -18,7 +18,9 @@ public class TileEntityNasaWorkbench extends TileEntityMulti implements IMultiBl
     @Override
     public boolean onActivated(EntityPlayer entityPlayer)
     {
-        entityPlayer.openGui(GalacticraftCore.instance, GuiIdsCore.NASA_WORKBENCH_ROCKET, this.worldObj, this.xCoord, this.yCoord, this.zCoord);
+        if (!entityPlayer.worldObj.isRemote) {
+            entityPlayer.openGui(GalacticraftCore.instance, GuiIdsCore.NASA_WORKBENCH_ROCKET, this.worldObj, this.xCoord, this.yCoord, this.zCoord);
+        }
         return true;
     }
 

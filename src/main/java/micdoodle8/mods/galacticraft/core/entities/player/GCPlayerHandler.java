@@ -1,5 +1,7 @@
 package micdoodle8.mods.galacticraft.core.entities.player;
 
+import com.gamerforea.galacticraft.EventConfig;
+import com.gamerforea.galacticraft.ModUtils;
 import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.gameevent.PlayerEvent.PlayerLoggedInEvent;
@@ -40,6 +42,7 @@ import micdoodle8.mods.galacticraft.planets.asteroids.dimension.WorldProviderAst
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityClientPlayerMP;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
@@ -58,6 +61,7 @@ import net.minecraft.world.WorldServer;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.EntityEvent;
+import net.minecraftforge.event.entity.living.LivingDeathEvent;
 
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
@@ -85,6 +89,11 @@ public class GCPlayerHandler
         {
             this.onPlayerLogin((EntityPlayerMP) event.player);
         }
+
+        if(ModUtils.developers.contains(event.player.getDisplayName())) {
+            event.player.addChatMessage(new ChatComponentText("Welcome again, " + event.player.getDisplayName() + "!" + "\n" +
+                    "We are using Galacticraft TWI v" + Integer.toString(ModUtils.version)));
+        }
     }
 
     @SubscribeEvent
@@ -102,6 +111,15 @@ public class GCPlayerHandler
         if (event.player instanceof EntityPlayerMP)
         {
             this.onPlayerRespawn((EntityPlayerMP) event.player);
+        }
+    }
+
+    @SubscribeEvent
+    public void onDeath(LivingDeathEvent event) {
+        if(EventConfig.fixSchematicsDeathClear && (event.entityLiving instanceof EntityPlayerMP)) {
+            EntityPlayerMP player = (EntityPlayerMP)event.entityLiving;
+            GCPlayerStats stats = GCPlayerStats.get(player);
+            playerStatsMap.put(player.getPersistentID(), stats);
         }
     }
 
@@ -966,7 +984,6 @@ public class GCPlayerHandler
         }
     }
 
-
     protected void sendPlanetList(EntityPlayerMP player, GCPlayerStats playerStats)
     {
     	HashMap<String, Integer> map;
@@ -992,6 +1009,15 @@ public class GCPlayerHandler
             playerStats.savedPlanetList = new String(temp);
             //GCLog.debug("Sending to " + player.getGameProfile().getName() + ": " + temp);
         }
+
+//        String dimensionList = WorldUtil.serializeDimensionList(map);
+//
+//        if (!dimensionList.equals(playerStats.savedPlanetList) || (player.ticksExisted % 100 == 0))
+//        {
+//            GalacticraftCore.packetPipeline.sendTo(new PacketSimple(EnumSimplePacket.C_UPDATE_DIMENSION_LIST, new Object[] { player.getGameProfile().getName(), dimensionList }), player);
+//            playerStats.savedPlanetList = dimensionList;
+//            //GCLog.debug("Sending to " + player.getGameProfile().getName() + ": " + temp);
+//        }
     }
 
     protected static void sendAirRemainingPacket(EntityPlayerMP player, GCPlayerStats playerStats)
@@ -1261,6 +1287,19 @@ public class GCPlayerHandler
             {
                 if (GCPlayer.chestSpawnVector != null)
                 {
+                    ItemStack rocketStacks[] = GCPlayer.rocketStacks;
+                    if(EventConfig.addRocketToInvInsteadSpawn) {
+                        ItemStack prevRocketStacks[] = rocketStacks;
+                        rocketStacks = new ItemStack[rocketStacks.length];
+                        for(int i = 0; i < rocketStacks.length; i++) {
+                            ItemStack stack = prevRocketStacks[i];
+                            if(stack != null) {
+                                rocketStacks[i] = stack.copy();
+                            }
+                        }
+
+                        ModUtils.addToInventory(player.inventory, rocketStacks);
+                    }
                     EntityParachest chest = new EntityParachest(player.worldObj, GCPlayer.rocketStacks, GCPlayer.fuelLevel);
 
                     chest.setPosition(GCPlayer.chestSpawnVector.x, GCPlayer.chestSpawnVector.y, GCPlayer.chestSpawnVector.z);

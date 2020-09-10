@@ -113,10 +113,13 @@ public class EntityParachest extends Entity
                         {
                             for (final ItemStack stack : this.cargo)
                             {
-                                final EntityItem e = new EntityItem(this.worldObj, this.posX, this.posY, this.posZ, stack);
-                                this.worldObj.spawnEntityInWorld(e);
+                                if(stack != null) {
+                                    final EntityItem e = new EntityItem(this.worldObj, this.posX, this.posY, this.posZ, stack);
+                                    this.worldObj.spawnEntityInWorld(e);
+                                }
                             }
 
+                            this.setDead();
                             return;
                         }
                     }
@@ -126,9 +129,14 @@ public class EntityParachest extends Entity
                 {
                     for (final ItemStack stack : this.cargo)
                     {
-                        final EntityItem e = new EntityItem(this.worldObj, this.posX, this.posY, this.posZ, stack);
-                        this.worldObj.spawnEntityInWorld(e);
+                        if(stack != null) {
+                            final EntityItem e = new EntityItem(this.worldObj, this.posX, this.posY, this.posZ, stack);
+                            this.worldObj.spawnEntityInWorld(e);
+                        }
                     }
+
+                    this.setDead();
+                    return;
                 }
             }
             else
@@ -151,10 +159,7 @@ public class EntityParachest extends Entity
 
             chest.chestContents = new ItemStack[this.cargo.length + 1];
 
-            for (int i = 0; i < this.cargo.length; i++)
-            {
-                chest.chestContents[i] = this.cargo[i];
-            }
+            System.arraycopy(this.cargo, 0, chest.chestContents, 0, this.cargo.length);
 
             chest.fuelTank.fill(FluidRegistry.getFluidStack(GalacticraftCore.fluidFuel.getName().toLowerCase(), this.fuelLevel), true);
 

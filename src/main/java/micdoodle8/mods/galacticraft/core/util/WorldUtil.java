@@ -7,6 +7,8 @@ import java.lang.reflect.Method;
 import java.util.*;
 import java.util.Map.Entry;
 
+import com.gamerforea.galacticraft.ModUtils;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.MapMaker;
 import com.google.common.collect.Maps;
 
@@ -442,47 +444,51 @@ public class WorldUtil
         {
             final SpaceStationWorldData data = SpaceStationWorldData.getStationData(playerBase.worldObj, element, null);
 
-            if (!ConfigManagerCore.spaceStationsRequirePermission || data.getAllowedAll() || data.getAllowedPlayers().contains(playerBase.getGameProfile().getName()) || VersionUtil.isPlayerOpped(playerBase))
-            {
-            	//Satellites always reachable from their own homeworld or from its other satellites
-            	if (playerBase != null)
-            	{
-            		int currentWorld = playerBase.dimension;
-            		//Player is on homeworld
-            		if (currentWorld == data.getHomePlanet())
-            		{
-            			temp.add(element);
-            			continue;
-            		}
-            		if (playerBase.worldObj.provider instanceof IOrbitDimension)
-            		{
-            			//Player is currently on another space station around the same planet 
-                        final SpaceStationWorldData dataCurrent = SpaceStationWorldData.getStationData(playerBase.worldObj, playerBase.dimension, null);
-                        if (dataCurrent.getHomePlanet() == data.getHomePlanet())
+            try {
+                if (!ConfigManagerCore.spaceStationsRequirePermission || data.getAllowedAll() || data.getAllowedPlayers().contains(playerBase.getGameProfile().getName()) || VersionUtil.isPlayerOpped(playerBase))
+                {
+                    //Satellites always reachable from their own homeworld or from its other satellites
+                    if (playerBase != null)
+                    {
+                        int currentWorld = playerBase.dimension;
+                        //Player is on homeworld
+                        if (currentWorld == data.getHomePlanet())
                         {
-	            			temp.add(element);
-	            			continue;
+                            temp.add(element);
+                            continue;
                         }
-            		}
-            	}
+                        if (playerBase.worldObj.provider instanceof IOrbitDimension)
+                        {
+                            //Player is currently on another space station around the same planet
+                            final SpaceStationWorldData dataCurrent = SpaceStationWorldData.getStationData(playerBase.worldObj, playerBase.dimension, null);
+                            if (dataCurrent.getHomePlanet() == data.getHomePlanet())
+                            {
+                                temp.add(element);
+                                continue;
+                            }
+                        }
+                    }
 
-            	//Testing dimension is a satellite, but with a different homeworld - test its tier
-            	WorldProvider homeWorld = WorldUtil.getProviderForDimensionServer(data.getHomePlanet());
-	
-	            if (homeWorld != null)
-	            {
-	                if (homeWorld instanceof IGalacticraftWorldProvider)
-	                {
-	                    if (((IGalacticraftWorldProvider) homeWorld).canSpaceshipTierPass(tier))
-	                    {
-	                        temp.add(element);
-	                    }
-	                }
-	                else
-	                {
-	                    temp.add(element);
-	                }
-	            }
+                    //Testing dimension is a satellite, but with a different homeworld - test its tier
+                    WorldProvider homeWorld = WorldUtil.getProviderForDimensionServer(data.getHomePlanet());
+
+                    if (homeWorld != null)
+                    {
+                        if (homeWorld instanceof IGalacticraftWorldProvider)
+                        {
+                            if (((IGalacticraftWorldProvider) homeWorld).canSpaceshipTierPass(tier))
+                            {
+                                temp.add(element);
+                            }
+                        }
+                        else
+                        {
+                            temp.add(element);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                ModUtils.LOGGER.warn("Skipping (not) available space station {}", element);
             }
         }
 
@@ -560,6 +566,47 @@ public class WorldUtil
     		return ws.provider;
     	}
     	return WorldProvider.getProviderForDimension(id);
+    }
+
+    public static boolean isPossibleDimension(int tier, EntityPlayerMP playerBase, int dimensionId, boolean checkUnreachable)
+    {
+        label0:
+        {
+            List ids = getPossibleDimensionsForSpaceshipTier(tier, playerBase);
+            for(Iterator iterator = ids.iterator(); iterator.hasNext();)
+            {
+                int dimId = ((Integer)iterator.next()).intValue();
+                CelestialBody celestialBody = getReachableCelestialBodiesForDimensionID(dimId);
+                if(dimId > 0 && celestialBody == null)
+                {
+                    if(playerBase != null && dimId == dimensionId)
+                        return true;
+                } else
+                if(celestialBody == GalacticraftCore.planetOverworld)
+                {
+                    if(dimId == dimensionId)
+                        return true;
+                } else
+                {
+                    WorldProvider provider = getProviderForDimensionServer(dimId);
+                    if(celestialBody != null && provider != null && ((provider instanceof IGalacticraftWorldProvider) && !(provider instanceof IOrbitDimension) || provider.dimensionId == 0) && provider.dimensionId == dimensionId)
+                        return true;
+                }
+            }
+
+            if(!checkUnreachable)
+                break label0;
+            Iterator iterator1 = Iterables.concat(GalaxyRegistry.getRegisteredPlanets().values(), GalaxyRegistry.getRegisteredMoons().values()).iterator();
+            CelestialBody body;
+            do
+            {
+                if(!iterator1.hasNext())
+                    break label0;
+                body = (CelestialBody)iterator1.next();
+            } while(body.getReachable() || body.getDimensionID() != dimensionId);
+            return true;
+        }
+        return false;
     }
     
     /**
@@ -859,6 +906,16 @@ public class WorldUtil
         }
     }
 
+    public static boolean isPossibleDimension(int dimensionId)
+    {
+        if(dimensionId == ConfigManagerCore.idDimensionOverworld)
+            return true;
+        if(registeredPlanets.contains(Integer.valueOf(dimensionId)))
+            return true;
+        else
+            return registeredSpaceStations != null && registeredSpaceStations.containsKey(Integer.valueOf(dimensionId));
+    }
+
     /**
      * This doesn't check if player is using the correct rocket, this is just a
      * total list of all space dimensions.  It does not load the dimensions.
@@ -869,16 +926,10 @@ public class WorldUtil
 
         temp.add(ConfigManagerCore.idDimensionOverworld);
 
-        for (final Integer i : WorldUtil.registeredPlanets)
-        {
-            temp.add(i);
-        }
+        temp.addAll(WorldUtil.registeredPlanets);
 
         if (WorldUtil.registeredSpaceStations != null)
-        	for (final Integer i : WorldUtil.registeredSpaceStations.keySet())
-	        {
-	            temp.add(i);
-	        }
+            temp.addAll(WorldUtil.registeredSpaceStations.keySet());
 
         final Integer[] finalArray = new Integer[temp.size()];
 
@@ -938,6 +989,8 @@ public class WorldUtil
 	            DimensionManager.registerDimension(dimID, dynamicProviderID);
                 WorldUtil.registeredSpaceStations.put(dimID, dynamicProviderID);
 	        }
+
+	        MinecraftServer.getServer().worldServerForDimension(dimID).getGameRules().addGameRule("mobGriefing", "false");
         }
         else
         {
@@ -1665,19 +1718,26 @@ public class WorldUtil
         return true;
     }
 
+    public static String serializeDimensionList(Map dimensions)
+    {
+        StringJoiner dimensionList = new StringJoiner("?");
+        String dimensionName;
+        for(Iterator iterator = dimensions.keySet().iterator(); iterator.hasNext(); dimensionList.add(dimensionName))
+        {
+            dimensionName = (String)iterator.next();
+            dimensionName = dimensionName.replace('?', '_').replace('$', '_').replace(';', '_');
+        }
+
+        return dimensionList.toString();
+    }
+
     public static void toCelestialSelection(EntityPlayerMP player, GCPlayerStats stats, int tier)
     {
         player.mountEntity(null);
         stats.spaceshipTier = tier;
 
         HashMap<String, Integer> map = WorldUtil.getArrayOfPossibleDimensions(tier, player);
-        String dimensionList = "";
-        int count = 0;
-        for (Entry<String, Integer> entry : map.entrySet())
-        {
-        	dimensionList = dimensionList.concat(entry.getKey() + (count < map.entrySet().size() - 1 ? "?" : ""));
-            count++;
-        }
+        String dimensionList = serializeDimensionList(map);
 
         GalacticraftCore.packetPipeline.sendTo(new PacketSimple(EnumSimplePacket.C_UPDATE_DIMENSION_LIST, new Object[] { player.getGameProfile().getName(), dimensionList }), player);
         stats.usingPlanetSelectionGui = true;

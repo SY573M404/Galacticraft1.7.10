@@ -7,6 +7,7 @@ import micdoodle8.mods.galacticraft.api.entity.ICargoEntity;
 import micdoodle8.mods.galacticraft.api.entity.IDockable;
 import micdoodle8.mods.galacticraft.api.entity.IFuelable;
 import micdoodle8.mods.galacticraft.api.entity.ILandable;
+import micdoodle8.mods.galacticraft.api.prefab.entity.EntitySpaceshipBase;
 import micdoodle8.mods.galacticraft.api.tile.IFuelDock;
 import micdoodle8.mods.galacticraft.api.tile.ILandingPadAttachable;
 import micdoodle8.mods.galacticraft.api.vector.BlockVec3;
@@ -30,6 +31,12 @@ public class TileEntityLandingPad extends TileEntityMulti implements IMultiBlock
 {
     private IDockable dockedEntity;
 
+    private void validateDockedEntity() {
+        if((dockedEntity instanceof Entity) && ((Entity)dockedEntity).isDead) {
+            this.dockedEntity = null;
+        }
+    }
+
     @Override
     public void updateEntity()
     {
@@ -37,6 +44,7 @@ public class TileEntityLandingPad extends TileEntityMulti implements IMultiBlock
 
         if (!this.worldObj.isRemote)
         {
+            validateDockedEntity();
             final List<?> list = this.worldObj.getEntitiesWithinAABB(IFuelable.class, AxisAlignedBB.getBoundingBox(this.xCoord - 0.5D, this.yCoord, this.zCoord - 0.5D, this.xCoord + 0.5D, this.yCoord + 1.0D, this.zCoord + 0.5D));
 
             boolean docked = false;
@@ -45,22 +53,27 @@ public class TileEntityLandingPad extends TileEntityMulti implements IMultiBlock
             {
                 if (o instanceof IDockable && !((Entity)o).isDead) 
                 {
-                    docked = true;
+                    if(docked && (o instanceof EntitySpaceshipBase)) {
+                        EntitySpaceshipBase ship = (EntitySpaceshipBase)o;
+                        ship.dropShipAsItem();
+                        ship.setDead();
+                    } else {
+                        docked = true;
 
-                    final IDockable fuelable = (IDockable) o;
+                        final IDockable fuelable = (IDockable) o;
 
-                    if (fuelable != this.dockedEntity && fuelable.isDockValid(this))
-                    {
-                        if (fuelable instanceof ILandable)
+                        if (fuelable != this.dockedEntity && fuelable.isDockValid(this))
                         {
-                        	((ILandable) fuelable).landEntity(this.xCoord, this.yCoord, this.zCoord);
-                        }
-                        else
-                        {
-                            fuelable.setPad(this);
+                            if (fuelable instanceof ILandable)
+                            {
+                                ((ILandable) fuelable).landEntity(this.xCoord, this.yCoord, this.zCoord);
+                            }
+                            else
+                            {
+                                fuelable.setPad(this);
+                            }
                         }
                     }
-
                     break;
                 }
             }
@@ -107,6 +120,7 @@ public class TileEntityLandingPad extends TileEntityMulti implements IMultiBlock
     @Override
     public void onDestroy(TileEntity callingBlock)
     {
+        validateDockedEntity();
         final BlockVec3 thisBlock = new BlockVec3(this);
 
         this.worldObj.func_147480_a(thisBlock.x, thisBlock.y, thisBlock.z, true);
@@ -135,6 +149,7 @@ public class TileEntityLandingPad extends TileEntityMulti implements IMultiBlock
     @Override
     public int addFuel(FluidStack liquid, boolean doFill)
     {
+        validateDockedEntity();
         if (this.dockedEntity != null)
         {
             return this.dockedEntity.addFuel(liquid, doFill);
@@ -146,6 +161,7 @@ public class TileEntityLandingPad extends TileEntityMulti implements IMultiBlock
     @Override
     public FluidStack removeFuel(int amount)
     {
+        validateDockedEntity();
         if (this.dockedEntity != null)
         {
             return this.dockedEntity.removeFuel(amount);
@@ -192,6 +208,7 @@ public class TileEntityLandingPad extends TileEntityMulti implements IMultiBlock
     @Override
     public EnumCargoLoadingState addCargo(ItemStack stack, boolean doAdd)
     {
+        validateDockedEntity();
         if (this.dockedEntity != null)
         {
             return this.dockedEntity.addCargo(stack, doAdd);
@@ -203,6 +220,7 @@ public class TileEntityLandingPad extends TileEntityMulti implements IMultiBlock
     @Override
     public RemovalResult removeCargo(boolean doRemove)
     {
+        validateDockedEntity();
         if (this.dockedEntity != null)
         {
             return this.dockedEntity.removeCargo(doRemove);
@@ -234,6 +252,7 @@ public class TileEntityLandingPad extends TileEntityMulti implements IMultiBlock
     @Override
     public IDockable getDockedEntity()
     {
+        validateDockedEntity();
         return this.dockedEntity;
     }
 

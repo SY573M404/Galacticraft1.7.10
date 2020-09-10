@@ -1,5 +1,7 @@
 package micdoodle8.mods.galacticraft.core.entities;
 
+import com.gamerforea.eventhelper.util.EventUtils;
+import com.gamerforea.galacticraft.ModUtils;
 import micdoodle8.mods.galacticraft.api.vector.Vector3;
 import micdoodle8.mods.galacticraft.core.items.GCItems;
 import micdoodle8.mods.galacticraft.core.util.ClientUtil;
@@ -55,6 +57,11 @@ public class EntityFlag extends Entity
             }
             else
             {
+                Entity attacker = par1DamageSource.getEntity();
+                EntityPlayer player = ((EntityPlayer)((attacker instanceof EntityPlayer) ? (EntityPlayer)attacker : ((EntityPlayer)(ModUtils.getModFake(worldObj)))));
+                if(EventUtils.cantBreak(player, posX, posY, posZ)) {
+                    return false;
+                }
                 this.setBeenAttacked();
                 this.setDamage(this.getDamage() + par2 * 10);
                 this.worldObj.playSoundEffect(this.posX, this.posY, this.posZ, Block.soundTypeMetal.getBreakSound(), Block.soundTypeMetal.getVolume(), Block.soundTypeMetal.getPitch() + 1.0F);
@@ -163,7 +170,7 @@ public class EntityFlag extends Entity
     protected void writeEntityToNBT(NBTTagCompound par1NBTTagCompound)
     {
         par1NBTTagCompound.setString("Owner", String.valueOf(this.getOwner()));
-        par1NBTTagCompound.setInteger("Type", Integer.valueOf(this.getType()));
+        par1NBTTagCompound.setInteger("Type", this.getType());
         par1NBTTagCompound.setBoolean("Indestructable", this.indestructable);
         par1NBTTagCompound.setInteger("AngleI", this.getFacingAngle());
         par1NBTTagCompound.setDouble("TileX", this.xPosition);

@@ -1,5 +1,6 @@
 package micdoodle8.mods.galacticraft.core.items;
 
+import com.gamerforea.eventhelper.util.EventUtils;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import micdoodle8.mods.galacticraft.api.item.IHoldableItem;
@@ -47,7 +48,7 @@ public class ItemFlag extends Item implements IHoldableItem
 
         boolean placed = false;
 
-        final MovingObjectPosition var12 = this.getMovingObjectPositionFromPlayer(par2World, par3EntityPlayer, true);
+        final MovingObjectPosition mop = this.getMovingObjectPositionFromPlayer(par2World, par3EntityPlayer, true);
 
         float var7 = useTime / 20.0F;
         var7 = (var7 * var7 + var7 * 2.0F) / 3.0F;
@@ -57,11 +58,15 @@ public class ItemFlag extends Item implements IHoldableItem
             var7 = 1.0F;
         }
 
-        if (var7 == 1.0F && var12 != null && var12.typeOfHit == MovingObjectType.BLOCK)
+        if (var7 == 1.0F && mop != null && mop.typeOfHit == MovingObjectType.BLOCK)
         {
-            final int x = var12.blockX;
-            final int y = var12.blockY;
-            final int z = var12.blockZ;
+            final int x = mop.blockX;
+            final int y = mop.blockY;
+            final int z = mop.blockZ;
+
+            if(EventUtils.cantBreak(par3EntityPlayer, x, y, z)) {
+                return;
+            }
 
             if (!par2World.isRemote)
             {

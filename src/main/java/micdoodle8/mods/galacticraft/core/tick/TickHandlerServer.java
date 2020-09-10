@@ -4,10 +4,12 @@ import com.google.common.collect.Lists;
 
 import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
+import cpw.mods.fml.common.gameevent.PlayerEvent;
 import cpw.mods.fml.common.gameevent.TickEvent.Phase;
 import cpw.mods.fml.common.gameevent.TickEvent.ServerTickEvent;
 import cpw.mods.fml.common.gameevent.TickEvent.WorldTickEvent;
 import cpw.mods.fml.common.network.NetworkRegistry;
+import micdoodle8.mods.galacticraft.api.prefab.entity.EntitySpaceshipBase;
 import micdoodle8.mods.galacticraft.api.vector.BlockVec3;
 import micdoodle8.mods.galacticraft.api.vector.BlockVec3Dim;
 import micdoodle8.mods.galacticraft.api.world.IOrbitDimension;
@@ -537,6 +539,15 @@ public class TickHandlerServer
 
                 TickHandlerServer.edgeChecks.remove(world.provider.dimensionId);
             }
+        }
+    }
+
+    @SubscribeEvent
+    public void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
+        Entity ridingEntity = event.player.ridingEntity;
+        if(ridingEntity instanceof EntitySpaceshipBase) {
+            ridingEntity.riddenByEntity = null;
+            event.player.ridingEntity = null;
         }
     }
 }

@@ -163,7 +163,13 @@ public class PacketDynamic implements IPacket
 
             break;
         case 1:
-            TileEntity tile = player.worldObj.getTileEntity((Integer) this.data[0], (Integer) this.data[1], (Integer) this.data[2]);
+            int x = (Integer) data[0];
+            int y = (Integer) data[1];
+            int z = (Integer) data[2];
+            if(!player.worldObj.blockExists(x, y, z)) {
+                break;
+            }
+            TileEntity tile = player.worldObj.getTileEntity(x, y, z);
 
             if (tile instanceof IPacketReceiver)
             {

@@ -205,7 +205,7 @@ public class TileEntityCargoUnloader extends TileBaseElectricBlockWithInventory 
         {
             ItemStack stackAt = this.containingItems[count];
 
-            if (stackAt != null && stackAt.getItem() == stack.getItem() && stackAt.getItemDamage() == stack.getItemDamage() && stackAt.stackSize < stackAt.getMaxStackSize())
+            if (stackAt != null && stackAt.getItem() == stack.getItem() && stackAt.getItemDamage() == stack.getItemDamage() && stackAt.stackSize < stackAt.getMaxStackSize() && ItemStack.areItemStackTagsEqual(stackAt, stack))
             {
                 if (stackAt.stackSize + stack.stackSize <= stackAt.getMaxStackSize())
                 {

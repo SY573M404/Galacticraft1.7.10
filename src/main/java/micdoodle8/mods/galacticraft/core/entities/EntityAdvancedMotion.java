@@ -302,7 +302,7 @@ public abstract class EntityAdvancedMotion extends InventoryEntity implements IC
 
         super.onUpdate();
 
-        if (this.canSetPositionClient() && this.worldObj.isRemote && (this.riddenByEntity == null || !(this.riddenByEntity instanceof EntityPlayer) || !FMLClientHandler.instance().getClient().thePlayer.equals(this.riddenByEntity)))
+        if (this.canSetPositionClient() && this.worldObj.isRemote && (!(this.riddenByEntity instanceof EntityPlayer) || !FMLClientHandler.instance().getClient().thePlayer.equals(this.riddenByEntity)))
         {
             double x;
             double y;
@@ -353,7 +353,7 @@ public abstract class EntityAdvancedMotion extends InventoryEntity implements IC
             this.tickInAir();
         }
 
-        if (this.worldObj.isRemote)
+        if (!this.worldObj.isRemote)
         {
             Vector3 mot = this.getMotionVec();
             this.motionX = mot.x;

@@ -1,5 +1,7 @@
 package micdoodle8.mods.galacticraft.core.entities;
 
+import com.gamerforea.galacticraft.EventConfig;
+import com.gamerforea.galacticraft.ModUtils;
 import cpw.mods.fml.client.FMLClientHandler;
 import io.netty.buffer.ByteBuf;
 import micdoodle8.mods.galacticraft.core.GalacticraftCore;
@@ -85,14 +87,29 @@ public abstract class EntityLanderBase extends EntityAdvancedMotion implements I
         this(player.worldObj, player.posX, player.posY, player.posZ, yOffset);
 
         GCPlayerStats stats = GCPlayerStats.get(player);
+
+        ItemStack rocketStacks[] = stats.rocketStacks;
+        if(EventConfig.addRocketToInvInsteadSpawn) {
+            ItemStack prevRocketStacks[] = stats.rocketStacks;
+            rocketStacks = new ItemStack[rocketStacks.length];
+            for(int i = 0; i < rocketStacks.length; i++) {
+                ItemStack stack = prevRocketStacks[i];
+                if(stack != null) {
+                    rocketStacks[i] = stack.copy();
+                }
+            }
+
+            ModUtils.addToInventory(player.inventory, rocketStacks);
+        }
+
         this.containedItems = new ItemStack[stats.rocketStacks.length + 1];
         this.fuelTank.setFluid(new FluidStack(GalacticraftCore.fluidFuel, stats.fuelLevel));
 
-        for (int i = 0; i < stats.rocketStacks.length; i++)
+        for (int i = 0; i < rocketStacks.length; i++)
         {
-            if (stats.rocketStacks[i] != null)
+            if (rocketStacks[i] != null)
             {
-                this.containedItems[i] = stats.rocketStacks[i].copy();
+                this.containedItems[i] = rocketStacks[i].copy();
             }
             else
             {

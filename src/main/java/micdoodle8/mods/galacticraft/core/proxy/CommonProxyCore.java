@@ -1,5 +1,7 @@
 package micdoodle8.mods.galacticraft.core.proxy;
 
+import com.gamerforea.galacticraft.EventConfig;
+import com.gamerforea.galacticraft.ModUtils;
 import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPostInitializationEvent;
@@ -20,6 +22,8 @@ public class CommonProxyCore
 
     public void preInit(FMLPreInitializationEvent event)
     {
+        EventConfig.init();
+        ModUtils.LOGGER.info("Initializing TWI Galacticraft v{} by SY573M_404", ModUtils.version);
     }
 
     public void init(FMLInitializationEvent event)

@@ -1,11 +1,15 @@
 package micdoodle8.mods.galacticraft.core.network;
 
+import com.gamerforea.eventhelper.util.EventUtils;
+import com.gamerforea.galacticraft.EventConfig;
+import com.gamerforea.galacticraft.ModUtils;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 
+import com.sun.javafx.event.EventUtil;
 import cpw.mods.fml.client.FMLClientHandler;
 import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.relauncher.Side;
@@ -527,14 +531,16 @@ public class PacketSimple extends Packet implements IPacket
             for (Object o : this.data)
             {
                 Integer schematicID = (Integer) o;
+                ISchematicPage schematicPage;
 
                 if (schematicID != -2)
                 {
                     Collections.sort(stats.unlockedSchematics);
+                    schematicPage = SchematicRegistry.getMatchingRecipeForID(schematicID);
 
                     if (!stats.unlockedSchematics.contains(SchematicRegistry.getMatchingRecipeForID(Integer.valueOf(schematicID))))
                     {
-                        stats.unlockedSchematics.add(SchematicRegistry.getMatchingRecipeForID(Integer.valueOf(schematicID)));
+                        stats.unlockedSchematics.add(schematicPage);
                     }
                 }
             }
@@ -858,6 +864,46 @@ public class PacketSimple extends Packet implements IPacket
                 {
                     final WorldServer world = (WorldServer) playerBase.worldObj;
 
+                    CelestialBody celestialBody = GalaxyRegistry.getCelestialBodyFromDimensionID(dim, true);
+                    String celestialBodyName = celestialBody != null ? celestialBody.getName() : "null";
+                    WorldServer targetWorld = MinecraftServer.getServer().worldServerForDimension(dim);
+                    if(celestialBody != null ? !celestialBody.getReachable() : !((String)data.get(0)).startsWith("Space Station ")) {
+                        if(EventConfig.teleportDebug) {
+                            boolean reachable = celestialBody != null && celestialBody.getReachable();
+                            ModUtils.LOGGER.info("{}'s teleport from {} to {} was cancelled. Celestial body {} is {}reachable",
+                                    playerBase.getCommandSenderName(), playerBase.worldObj.getWorldInfo().getWorldName(),
+                                    targetWorld != null ? targetWorld.getWorldInfo().getWorldName() : null,
+                                    celestialBodyName, reachable ? "" : "not");
+                        }
+                        break;
+                    }
+
+                    if(!WorldUtil.isPossibleDimension(dim)) {
+                        if(EventConfig.teleportDebug) {
+                            ModUtils.LOGGER.info("{}'s teleport from {} to {} was cancelled. Celestial body {} is not possible dimension",
+                                    playerBase.getCommandSenderName(), playerBase.worldObj.getWorldInfo().getWorldName(),
+                                    targetWorld != null ? targetWorld.getWorldInfo().getWorldName() : null,
+                                    celestialBodyName);
+                        }
+                        break;
+                    }
+
+                    if(EventConfig.teleportCheckTier) {
+                        int tier = GCPlayerStats.get(playerBase).spaceshipTier;
+                        if(player.ridingEntity instanceof EntityTieredRocket) {
+                            tier = Math.max(tier, ((EntityTieredRocket)player.ridingEntity).getRocketTier());
+                        }
+                        if(!WorldUtil.isPossibleDimension(tier, playerBase, dim, false)) {
+                            if(EventConfig.teleportDebug) {
+                                ModUtils.LOGGER.info("{}'s teleport from {} to {} was cancelled. Celestial body {} is not possible for {} tier",
+                                        playerBase.getCommandSenderName(), playerBase.worldObj.getWorldInfo().getWorldName(),
+                                        targetWorld != null ? targetWorld.getWorldInfo().getWorldName() : null,
+                                        celestialBodyName, tier);
+                            }
+                            break;
+                        }
+                    }
+
                     WorldUtil.transferEntityToDimension(playerBase, dim, world);
                 }
 
@@ -942,14 +988,19 @@ public class PacketSimple extends Packet implements IPacket
             }
             break;
         case S_SET_ENTITY_FIRE:
+            if(!EventConfig.rocketLaunchFlame) {
+                break;
+            }
             Entity entity = player.worldObj.getEntityByID((Integer) this.data.get(0));
-
             if (entity instanceof EntityLivingBase)
             {
                 ((EntityLivingBase) entity).setFire(3);
             }
             break;
         case S_BIND_SPACE_STATION_ID:
+            if(EventConfig.stationNeedPerm && !EventUtils.hasPermission(player, EventConfig.stationPerm)) {
+                break;
+            }
             int homeID = (Integer) this.data.get(0);
             if ((!stats.spaceStationDimensionData.containsKey(homeID) || stats.spaceStationDimensionData.get(homeID) == -1 || stats.spaceStationDimensionData.get(homeID) == 0)
                     && !ConfigManagerCore.disableSpaceStationCreation)
@@ -1019,67 +1070,76 @@ public class PacketSimple extends Packet implements IPacket
         case S_OPEN_EXTENDED_INVENTORY:
             player.openGui(GalacticraftCore.instance, GuiIdsCore.EXTENDED_INVENTORY, player.worldObj, 0, 0, 0);
             break;
-        case S_ON_ADVANCED_GUI_CLICKED_INT:
-            TileEntity tile1 = player.worldObj.getTileEntity((Integer) this.data.get(1), (Integer) this.data.get(2), (Integer) this.data.get(3));
+        case S_ON_ADVANCED_GUI_CLICKED_INT: {
+            int x = (Integer) data.get(1);
+            int y = (Integer) data.get(2);
+            int z = (Integer) data.get(3);
 
-            switch ((Integer) this.data.get(0))
-            {
-            case 0:
-                if (tile1 instanceof TileEntityAirLockController)
-                {
-                    TileEntityAirLockController airlockController = (TileEntityAirLockController) tile1;
-                    airlockController.redstoneActivation = (Integer) this.data.get(4) == 1;
-                }
-                break;
-            case 1:
-                if (tile1 instanceof TileEntityAirLockController)
-                {
-                    TileEntityAirLockController airlockController = (TileEntityAirLockController) tile1;
-                    airlockController.playerDistanceActivation = (Integer) this.data.get(4) == 1;
-                }
-                break;
-            case 2:
-                if (tile1 instanceof TileEntityAirLockController)
-                {
-                    TileEntityAirLockController airlockController = (TileEntityAirLockController) tile1;
-                    airlockController.playerDistanceSelection = (Integer) this.data.get(4);
-                }
-                break;
-            case 3:
-                if (tile1 instanceof TileEntityAirLockController)
-                {
-                    TileEntityAirLockController airlockController = (TileEntityAirLockController) tile1;
-                    airlockController.playerNameMatches = (Integer) this.data.get(4) == 1;
-                }
-                break;
-            case 4:
-                if (tile1 instanceof TileEntityAirLockController)
-                {
-                    TileEntityAirLockController airlockController = (TileEntityAirLockController) tile1;
-                    airlockController.invertSelection = (Integer) this.data.get(4) == 1;
-                }
-                break;
-            case 5:
-                if (tile1 instanceof TileEntityAirLockController)
-                {
-                    TileEntityAirLockController airlockController = (TileEntityAirLockController) tile1;
-                    airlockController.lastHorizontalModeEnabled = airlockController.horizontalModeEnabled;
-                    airlockController.horizontalModeEnabled = (Integer) this.data.get(4) == 1;
-                }
-                break;
-            case 6:
-                if (tile1 instanceof IBubbleProvider)
-                {
-                    IBubbleProvider distributor = (IBubbleProvider) tile1;
-                    distributor.setBubbleVisible((Integer) this.data.get(4) == 1);
-                }
-                break;
-            default:
+            if (!player.worldObj.blockExists(x, y, z) || EventUtils.cantBreak(player, x, y, z)) {
                 break;
             }
+
+            TileEntity tile1 = player.worldObj.getTileEntity(x, y, z);
+
+            switch ((Integer) this.data.get(0)) {
+                case 0:
+                    if (tile1 instanceof TileEntityAirLockController) {
+                        TileEntityAirLockController airlockController = (TileEntityAirLockController) tile1;
+                        airlockController.redstoneActivation = (Integer) this.data.get(4) == 1;
+                    }
+                    break;
+                case 1:
+                    if (tile1 instanceof TileEntityAirLockController) {
+                        TileEntityAirLockController airlockController = (TileEntityAirLockController) tile1;
+                        airlockController.playerDistanceActivation = (Integer) this.data.get(4) == 1;
+                    }
+                    break;
+                case 2:
+                    if (tile1 instanceof TileEntityAirLockController) {
+                        TileEntityAirLockController airlockController = (TileEntityAirLockController) tile1;
+                        airlockController.playerDistanceSelection = (Integer) this.data.get(4);
+                    }
+                    break;
+                case 3:
+                    if (tile1 instanceof TileEntityAirLockController) {
+                        TileEntityAirLockController airlockController = (TileEntityAirLockController) tile1;
+                        airlockController.playerNameMatches = (Integer) this.data.get(4) == 1;
+                    }
+                    break;
+                case 4:
+                    if (tile1 instanceof TileEntityAirLockController) {
+                        TileEntityAirLockController airlockController = (TileEntityAirLockController) tile1;
+                        airlockController.invertSelection = (Integer) this.data.get(4) == 1;
+                    }
+                    break;
+                case 5:
+                    if (tile1 instanceof TileEntityAirLockController) {
+                        TileEntityAirLockController airlockController = (TileEntityAirLockController) tile1;
+                        airlockController.lastHorizontalModeEnabled = airlockController.horizontalModeEnabled;
+                        airlockController.horizontalModeEnabled = (Integer) this.data.get(4) == 1;
+                    }
+                    break;
+                case 6:
+                    if (tile1 instanceof IBubbleProvider) {
+                        IBubbleProvider distributor = (IBubbleProvider) tile1;
+                        distributor.setBubbleVisible((Integer) this.data.get(4) == 1);
+                    }
+                    break;
+                default:
+                    break;
+            }
             break;
+        }
         case S_ON_ADVANCED_GUI_CLICKED_STRING:
-            TileEntity tile2 = player.worldObj.getTileEntity((Integer) this.data.get(1), (Integer) this.data.get(2), (Integer) this.data.get(3));
+            int x = (Integer)data.get(1);
+            int y = (Integer)data.get(2);
+            int z = (Integer)data.get(3);
+
+            if(!player.worldObj.blockExists(x, y, z) || EventUtils.cantBreak(player, x, y, z)) {
+                break;
+            }
+
+            TileEntity tile2 = player.worldObj.getTileEntity(x, y, z);
 
             switch ((Integer) this.data.get(0))
             {
